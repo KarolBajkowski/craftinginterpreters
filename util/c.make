@@ -27,7 +27,7 @@ ifeq ($(MODE),debug)
 	CFLAGS += -O0 -DDEBUG -g
 	BUILD_DIR := build/debug
 else
-	CFLAGS += -O3 -flto
+	CFLAGS += -O3
 	BUILD_DIR := build/release
 endif
 
@@ -39,7 +39,7 @@ OBJECTS := $(addprefix $(BUILD_DIR)/$(NAME)/, $(notdir $(SOURCES:.c=.o)))
 # Targets ---------------------------------------------------------------------
 
 # Link the interpreter.
-build/$(NAME): $(OBJECTS)
+build/$(NAME)$(EXEEXT): $(OBJECTS)
 	@ printf "%8s %-40s %s\n" $(CC) $@ "$(CFLAGS)"
 	@ mkdir -p build
 	@ $(CC) $(CFLAGS) $^ -o $@

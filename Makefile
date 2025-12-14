@@ -3,6 +3,15 @@ TOOL_SOURCES := tool/pubspec.lock $(shell find tool -name '*.dart')
 BUILD_SNAPSHOT := $(BUILD_DIR)/build.dart.snapshot
 TEST_SNAPSHOT := $(BUILD_DIR)/test.dart.snapshot
 
+ifeq ($(OS),Windows_NT)
+  EXEEXT := .exe
+else
+  EXEEXT :=
+endif
+
+CLOX := clox$(EXEEXT)
+CLOXD := cloxd$(EXEEXT)
+
 default: book clox jlox
 
 # Run dart pub get on tool directory.
@@ -29,12 +38,12 @@ $(BUILD_SNAPSHOT): $(TOOL_SOURCES)
 
 # Run the tests for the final versions of clox and jlox.
 test: debug jlox $(TEST_SNAPSHOT)
-	@- dart $(TEST_SNAPSHOT) clox
+	@- dart $(TEST_SNAPSHOT) clox$(EXEEXT)
 	@ dart $(TEST_SNAPSHOT) jlox
 
 # Run the tests for the final version of clox.
 test_clox: debug $(TEST_SNAPSHOT)
-	@ dart $(TEST_SNAPSHOT) clox
+	@ dart $(TEST_SNAPSHOT) $(CLOX)
 
 # Run the tests for the final version of jlox.
 test_jlox: jlox $(TEST_SNAPSHOT)
@@ -55,16 +64,16 @@ test_all: debug jlox c_chapters java_chapters compile_snippets $(TEST_SNAPSHOT)
 $(TEST_SNAPSHOT): $(TOOL_SOURCES)
 	@ mkdir -p build
 	@ echo "Compiling Dart snapshot..."
-	@ dart --snapshot=$@ --snapshot-kind=app-jit tool/bin/test.dart clox >/dev/null
+	@ dart --snapshot=$@ --snapshot-kind=app-jit tool/bin/test.dart $(CLOX) >/dev/null
 
 # Compile a debug build of clox.
 debug:
-	@ $(MAKE) -f util/c.make NAME=cloxd MODE=debug SOURCE_DIR=c
+	@ $(MAKE) -f util/c.make NAME=CLOXD MODE=debug SOURCE_DIR=c
 
 # Compile the C interpreter.
 clox:
 	@ $(MAKE) -f util/c.make NAME=clox MODE=release SOURCE_DIR=c
-	@ cp build/clox clox # For convenience, copy the interpreter to the top level.
+	@ cp build/$(CLOX) $(CLOX) # For convenience, copy the interpreter to the top level.
 
 # Compile the C interpreter as ANSI standard C++.
 cpplox:
