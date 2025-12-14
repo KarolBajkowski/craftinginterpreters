@@ -22,10 +22,10 @@ var _failed = 0;
 var _skipped = 0;
 var _expectations = 0;
 
-Suite _suite;
-String _filterPath;
-String _customInterpreter;
-List<String> _customArguments;
+Suite? _suite;
+String? _filterPath;
+String? _customInterpreter;
+List<String>? _customArguments;
 
 final _allSuites = <String, Suite>{};
 final _cSuites = <String>[];

@@ -19,14 +19,14 @@ class HighlightedCodeBlockSyntax extends BlockSyntax {
   HighlightedCodeBlockSyntax(this._format);
 
   bool canParse(BlockParser parser) =>
-      pattern.firstMatch(parser.current) != null;
+      pattern.firstMatch(parser.current.content) != null;
 
-  List<String> parseChildLines(BlockParser parser) {
-    var childLines = <String>[];
+  List<Line> parseChildLines(BlockParser parser) {
+    var childLines = <Line>[];
     parser.advance();
 
     while (!parser.isDone) {
-      var match = pattern.firstMatch(parser.current);
+      var match = pattern.firstMatch(parser.current.content);
       if (match == null) {
         childLines.add(parser.current);
         parser.advance();
@@ -41,8 +41,8 @@ class HighlightedCodeBlockSyntax extends BlockSyntax {
 
   Node parse(BlockParser parser) {
     // Get the syntax identifier, if there is one.
-    var match = pattern.firstMatch(parser.current);
-    var indent = match[1].length;
+    var match = pattern.firstMatch(parser.current.content);
+    var indent = match![1]!.length;
     var language = match[2];
 
     var childLines = parseChildLines(parser);
@@ -59,15 +59,15 @@ class HighlightedCodeBlockSyntax extends BlockSyntax {
         // https://html.spec.whatwg.org/#element-restrictions
         // Some snippets deliberately start with a newline which needs to be
         // preserved, so output an extra (discarded) newline in that case.
-        if (_format.isWeb && childLines.first.isEmpty) buffer.writeln();
+        if (_format.isWeb && childLines.first!.content.isEmpty) buffer.writeln();
       }
 
       for (var line in childLines) {
         // Strip off any leading indentation.
-        if (line.length > indent) line = line.substring(indent);
-        checkLineLength(line);
+        if (line!.content.length > indent) line = new Line(line.content.substring(indent));
+        checkLineLength(line!.content);
 
-        buffer.write(line.escapeHtml);
+        buffer.write(line.content.escapeHtml);
         if (_format.isPrint) {
           // Soft break, so that the code stays one paragraph.
           buffer.write("&#x2028;");
@@ -80,7 +80,9 @@ class HighlightedCodeBlockSyntax extends BlockSyntax {
 
       code = buffer.toString();
     } else {
-      code = formatCode(language, childLines, _format, indent: indent);
+      List<String> lines =
+          childLines.map((line) => line.content).toList();
+      code = formatCode(language!, lines, _format, indent: indent);
     }
 
     if (_format.isPrint) {
@@ -115,14 +117,14 @@ class CodeTagBlockSyntax extends BlockSyntax {
   RegExp get pattern => _startPattern;
 
   bool canParse(BlockParser parser) =>
-      pattern.firstMatch(parser.current) != null;
+      pattern.firstMatch(parser.current.content) != null;
 
   Node parse(BlockParser parser) {
-    var match = pattern.firstMatch(parser.current);
-    var name = match[1];
+    var match = pattern.firstMatch(parser.current.content);
+    var name = match![1];
     parser.advance();
 
-    var codeTag = _page.findCodeTag(name);
+    var codeTag = _page.findCodeTag(name!);
     String snippet;
     if (_format.isPrint) {
       snippet = _buildSnippetXml(codeTag, _book.findSnippet(codeTag));
@@ -133,7 +135,7 @@ class CodeTagBlockSyntax extends BlockSyntax {
   }
 }
 
-String _buildSnippet(Format format, CodeTag tag, Snippet snippet) {
+String _buildSnippet(Format format, CodeTag tag, Snippet? snippet) {
   // NOTE: If you change this, be sure to update the baked in example snippet
   // in introduction.md.
 
@@ -150,12 +152,12 @@ String _buildSnippet(Format format, CodeTag tag, Snippet snippet) {
 
   if (snippet.contextBefore.isNotEmpty) {
     _writeContextHtml(format, buffer, snippet.contextBefore,
-        cssClass: snippet.added.isNotEmpty ? "insert-before" : null);
+        cssClass: snippet.added!.isNotEmpty ? "insert-before" : null);
   }
 
   if (snippet.addedComma != null) {
     var commaLine = formatCode(
-        snippet.file.language, [snippet.addedComma], format,
+        snippet.file.language, [snippet.addedComma!], format,
         preClass: "insert-before");
     var comma = commaLine.lastIndexOf(",");
     buffer.write(commaLine.substring(0, comma));
@@ -169,14 +171,14 @@ String _buildSnippet(Format format, CodeTag tag, Snippet snippet) {
   }
 
   if (snippet.added != null) {
-    var added = formatCode(snippet.file.language, snippet.added, format,
+    var added = formatCode(snippet.file.language, snippet.added!, format,
         preClass: tag.beforeCount > 0 || tag.afterCount > 0 ? "insert" : null);
     buffer.write(added);
   }
 
   if (snippet.contextAfter.isNotEmpty) {
     _writeContextHtml(format, buffer, snippet.contextAfter,
-        cssClass: snippet.added.isNotEmpty ? "insert-after" : null);
+        cssClass: snippet.added!.isNotEmpty ? "insert-after" : null);
   }
 
   buffer.writeln('</div>');
@@ -189,12 +191,12 @@ String _buildSnippet(Format format, CodeTag tag, Snippet snippet) {
   return buffer.toString();
 }
 
-String _buildSnippetXml(CodeTag tag, Snippet snippet) {
+String _buildSnippetXml(CodeTag tag, Snippet? snippet) {
   var buffer = StringBuffer();
 
-  if (tag.showLocation) buffer.writeln(snippet.locationXml);
+  if (tag.showLocation) buffer.writeln(snippet!.locationXml);
 
-  if (snippet.contextBefore.isNotEmpty) {
+  if (snippet!.contextBefore.isNotEmpty) {
     _writeContextXml(buffer, snippet.contextBefore, "before");
   }
 
@@ -230,7 +232,7 @@ String _buildSnippetXml(CodeTag tag, Snippet snippet) {
     if (snippet.contextBefore.isNotEmpty) buffer.writeln();
     buffer.write("<$insertTag>");
 
-    var code = formatCode(snippet.file.language, snippet.added, Format.print);
+    var code = formatCode(snippet.file.language, snippet.added!, Format.print);
     // Discard the trailing newline so we don't end up with a blank paragraph
     // in InDesign.
     code = code.trimTrailingNewline();
@@ -252,7 +254,7 @@ String _buildSnippetXml(CodeTag tag, Snippet snippet) {
 }
 
 void _writeContextHtml(Format format, StringBuffer buffer, List<String> lines,
-    {String cssClass}) {
+    {String? cssClass}) {
   buffer.write("<pre");
   if (cssClass != null) buffer.write(' class="$cssClass"');
   buffer.write(">");

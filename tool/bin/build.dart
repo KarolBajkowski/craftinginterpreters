@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:glob/glob.dart';
+import 'package:glob/list_local_fs.dart';
 import 'package:mime_type/mime_type.dart';
 import 'package:path/path.dart' as p;
 import 'package:sass/sass.dart' as sass;
@@ -12,6 +13,7 @@ import 'package:tool/src/format.dart';
 import 'package:tool/src/markdown/markdown.dart';
 import 'package:tool/src/mustache.dart';
 import 'package:tool/src/page.dart';
+import 'package:tool/src/snippet.dart';
 import 'package:tool/src/term.dart' as term;
 import 'package:tool/src/text.dart';
 
@@ -45,7 +47,7 @@ void _buildPages({bool skipUpToDate = false}) {
   var book = Book();
   var mustache = Mustache();
 
-  DateTime dependenciesModified;
+  DateTime? dependenciesModified;
   if (skipUpToDate) {
     dependenciesModified = _mostRecentlyModified(
         ["asset/mustache/*.html", "c/*.{c,h}", "java/**.java"]);
@@ -71,7 +73,7 @@ void _buildPages({bool skipUpToDate = false}) {
 }
 
 List<int> _buildPage(Book book, Mustache mustache, Page page,
-    {DateTime dependenciesModified}) {
+    {DateTime? dependenciesModified}) {
   // See if the HTML is up to date.
   if (dependenciesModified != null &&
       _isUpToDate(page.htmlPath, page.markdownPath, dependenciesModified)) {
@@ -84,14 +86,14 @@ List<int> _buildPage(Book book, Mustache mustache, Page page,
 
   var wordCount = proseCount;
   for (var tag in page.codeTags) {
-    var snippet = book.findSnippet(tag);
+    Snippet? snippet = book.findSnippet(tag);
     if (snippet == null) {
       print("No snippet for $tag");
       continue;
     }
 
-    codeLineCount += snippet.added.length;
-    for (var line in snippet.added) wordCount += line.wordCount;
+    codeLineCount += snippet.added!.length;
+    for (var line in snippet.added!) wordCount += line.wordCount;
     for (var line in snippet.contextBefore) wordCount += line.wordCount;
     for (var line in snippet.contextAfter) wordCount += line.wordCount;
   }
@@ -148,8 +150,8 @@ void _buildSass({bool skipUpToDate = false}) {
     }
 
     var output =
-        sass.compile(scssPath, color: true, style: sass.OutputStyle.expanded);
-    File(cssPath).writeAsStringSync(output);
+        sass.compileToResult(scssPath, color: true, style: sass.OutputStyle.expanded);
+    File(cssPath).writeAsStringSync(output.css);
     print("${term.green('-')} $cssPath");
   }
 }
@@ -170,7 +172,7 @@ Future<void> _runServer() async {
     try {
       var contents = await File(p.join("site", filePath)).readAsBytes();
       return shelf.Response.ok(contents, headers: {
-        HttpHeaders.contentTypeHeader: mimeFromExtension(extension)
+        HttpHeaders.contentTypeHeader: mimeFromExtension(extension)!
       });
     } on FileSystemException {
       print(
@@ -197,15 +199,15 @@ bool _isUpToDate(
 
 /// The most recently modified time of all files that match [globs].
 DateTime _mostRecentlyModified(List<String> globs) {
-  DateTime latest;
+  DateTime? latest;
   for (var glob in globs) {
     for (var entry in Glob(glob).listSync()) {
       if (entry is File) {
-        var modified = entry.lastModifiedSync();
+        var modified = entry.statSync().modified;
         if (latest == null || modified.isAfter(latest)) latest = modified;
       }
     }
   }
 
-  return latest;
+  return latest!;
 }

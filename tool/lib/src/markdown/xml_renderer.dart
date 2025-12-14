@@ -37,8 +37,8 @@ class XmlRenderer implements NodeVisitor {
     var buffer = StringBuffer();
     buffer.writeln("<chapter>");
 
-    _Paragraph previousMain;
-    _Paragraph previousAside;
+    _Paragraph? previousMain;
+    _Paragraph? previousAside;
 
     for (var paragraph in _paragraphs) {
       String text;
@@ -57,7 +57,7 @@ class XmlRenderer implements NodeVisitor {
       buffer.write(text);
 
       // Only add the paragraph to the tag file buffer if it has a unique tag.
-      var tags = _tagPattern.allMatches(text).map((match) => match[1]).toSet();
+      var tags = _tagPattern.allMatches(text).map((match) => match[1]!).toSet();
       if (tags.difference(allTags).isNotEmpty) {
         tagFileBuffer.write(text);
         allTags.addAll(tags);
@@ -118,7 +118,7 @@ class XmlRenderer implements NodeVisitor {
 
     // Convert image tags to just their paths.
     if (text.startsWith("<img")) {
-      var imagePath = _imagePathPattern.firstMatch(text)[1];
+      var imagePath = _imagePathPattern.firstMatch(text)![1]!;
 
       // The GC chapter has a couple of tiny inline images that happen to be in
       // an unordered list. Don't create paragraphs for them.
@@ -248,7 +248,7 @@ class XmlRenderer implements NodeVisitor {
             _inlineStack[i] = _Inline(inline.tag);
           }
 
-          tagParts.add(inline.tag);
+          tagParts.add(inline.tag!);
         }
 
         String tag;
@@ -325,7 +325,7 @@ class XmlRenderer implements NodeVisitor {
   }
 
   void _pop() {
-    _context = _context.parent;
+    _context = _context.parent!;
     _resetParagraph();
   }
 
@@ -360,13 +360,13 @@ class XmlRenderer implements NodeVisitor {
 
 class _Context {
   final String name;
-  final _Context parent;
+  final _Context? parent;
 
   _Context(this.name, [this.parent]);
 
   /// Whether any of the contexts in this chain are [name].
   bool has(String name) {
-    var context = this;
+    _Context? context = this;
     while (context != null) {
       if (context.name == name) return true;
       context = context.parent;
@@ -376,13 +376,13 @@ class _Context {
   }
 
   /// Whether [parent] has [name].
-  bool isIn(String name) => parent != null && parent.has(name);
+  bool isIn(String name) => parent != null && parent!.has(name);
 
   /// How many levels of list nesting this context contains.
   int get listDepth {
     var depth = 0;
 
-    for (var context = this; context != null; context = context.parent) {
+    for (_Context? context = this; context != null; context = context.parent) {
       if (context.name == "ordered" || context.name == "unordered") {
         depth++;
       } else if (context.name == "aside") {
@@ -419,7 +419,7 @@ class _Context {
 
       case "first":
       case "item":
-        tag = "${parent.name}-$tag";
+        tag = "${parent!.name}-$tag";
         if (depth > 1) tag = "sublist-$tag";
         break;
 
@@ -496,7 +496,7 @@ class _Paragraph {
     return false;
   }
 
-  String prettyPrint(_Paragraph previous) {
+  String prettyPrint(_Paragraph? previous) {
     var buffer = StringBuffer();
     var tag = context.paragraphTag;
 
@@ -519,7 +519,7 @@ class _Paragraph {
 /// An inline tag or plain text.
 class _Inline {
   /// The tag name if this is an inline tag or `null` if it is text.
-  final String tag;
+  final String? tag;
 
   String text;
 

@@ -20,15 +20,15 @@ class BookHeaderSyntax extends BlockSyntax {
   BookHeaderSyntax(this._page, this._format);
 
   Node parse(BlockParser parser) {
-    var header = _page.headers[parser.current];
+    var header = _page.headers[parser.current.content];
     parser.advance();
 
     if (_format.isPrint) {
-      return Element("h${header.level}", [UnparsedContent(header.name)]);
+      return Element("h${header!.level}", [UnparsedContent(header.name)]);
     }
 
     var number = "";
-    if (!header.isSpecial) {
+    if (!header!.isSpecial) {
       number = "${_page.numberString}&#8202;.&#8202;${header.headerIndex}";
       if (header.subheaderIndex != null) {
         number += "&#8202;.&#8202;${header.subheaderIndex}";

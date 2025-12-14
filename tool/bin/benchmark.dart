@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:path/path.dart' as p;
+import 'package:path/path' as p;
 
 void main(List<String> arguments) {
   if (arguments.isEmpty) {
