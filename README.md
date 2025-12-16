@@ -1,3 +1,12 @@
+## About this fork
+This is a personal work-in-progress fork of the original repository. The changes in this repo are as follows:
+- Fix Dart code to be compilable with Dart v.3.0 and later. It mostly contains null annotations. In a couple of places, I had to modify the code slightly because of the API breaking changes. Although now it works, the generated \*.html files are slightly different. So it needs further refinement.
+- Some minor fixes in makefiles for the w64devkit toolkit on Windows.
+
+Because of the incomplete work and work in progress, I didn't try to merge it back to the original repository. When all known issues are resolved, then I think I could merge back to the upstream repository.
+
+# The original README is below:
+
 This is the repo used for the in-progress book "[Crafting Interpreters][]". It
 contains the Markdown text of the book, full implementations of both
 interpreters, as well as the build system to weave the two together into the
