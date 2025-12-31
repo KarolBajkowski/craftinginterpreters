@@ -33,8 +33,8 @@ serve: $(BUILD_SNAPSHOT)
 
 $(BUILD_SNAPSHOT): $(TOOL_SOURCES)
 	@ mkdir -p build
-	@ echo "Compiling Dart snapshot..."
-	@ dart --snapshot=$@ --snapshot-kind=app-jit tool/bin/build.dart >/dev/null
+	@ echo "Compiling Dart snapshot... $@"
+	dart --snapshot=$@ --snapshot-kind=app-jit tool/bin/build.dart
 
 # Run the tests for the final versions of clox and jlox.
 test: debug jlox $(TEST_SNAPSHOT)
@@ -47,7 +47,7 @@ test_clox: debug $(TEST_SNAPSHOT)
 
 # Run the tests for the final version of jlox.
 test_jlox: jlox $(TEST_SNAPSHOT)
-	@ dart $(TEST_SNAPSHOT) jlox
+	dart $(TEST_SNAPSHOT) jlox
 
 # Run the tests for every chapter's version of clox.
 test_c: debug c_chapters $(TEST_SNAPSHOT)
@@ -63,12 +63,12 @@ test_all: debug jlox c_chapters java_chapters compile_snippets $(TEST_SNAPSHOT)
 
 $(TEST_SNAPSHOT): $(TOOL_SOURCES)
 	@ mkdir -p build
-	@ echo "Compiling Dart snapshot..."
-	@ dart --snapshot=$@ --snapshot-kind=app-jit tool/bin/test.dart $(CLOX) >/dev/null
+	@ echo "Compiling Dart snapshot... $@ "
+	dart --snapshot=$@ --snapshot-kind=app-jit tool/bin/test.dart clox
 
 # Compile a debug build of clox.
 debug:
-	@ $(MAKE) -f util/c.make NAME=CLOXD MODE=debug SOURCE_DIR=c
+	@ $(MAKE) -f util/c.make NAME=cloxd MODE=debug SOURCE_DIR=c
 
 # Compile the C interpreter.
 clox:
